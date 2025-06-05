@@ -1,0 +1,72 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    USER_EVENTS:
+      type: "table-input"
+      parameters:
+        componentName: "USER_EVENTS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "USER_EVENTS"
+        columnNames:
+        - "USER_ID"
+        - "EVENT_TIME"
+        - "EVENT_DATA"
+        timeOffset:
+    Flatten Variant:
+      type: "flatten-variant"
+      sources:
+      - "USER_EVENTS"
+      parameters:
+        componentName: "Flatten Variant"
+        includeInputColumns: "Yes"
+        columnMapping:
+        - - "EVENT_DATA"
+          - "event_type"
+          - "VARCHAR"
+          - "EVENT_TYPE"
+        - - "EVENT_DATA"
+          - "event_name"
+          - "VARCHAR"
+          - "EVENT_NAME"
+        - - "EVENT_DATA"
+          - "event_owner"
+          - "VARCHAR"
+          - "EVENT_OWNER"
+        - - "EVENT_DATA"
+          - "event_promoter"
+          - "VARCHAR"
+          - "EVENT_PROMOTER"
+        columnFlattens:
+    Create View:
+      type: "create-view"
+      sources:
+      - "Flatten Variant"
+      parameters:
+        componentName: "Create View"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        viewName: "RES_FLATTEN_VAR"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    USER_EVENTS:
+      position:
+        x: 330
+        "y": 90
+      tempMetlId: 1
+    Flatten Variant:
+      position:
+        x: 490
+        "y": 90
+      tempMetlId: 2
+    Create View:
+      position:
+        x: 650
+        "y": 90
+      tempMetlId: 3

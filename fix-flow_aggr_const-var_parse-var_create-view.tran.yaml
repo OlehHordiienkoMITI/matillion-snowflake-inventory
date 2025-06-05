@@ -1,0 +1,130 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    Fixed Flow:
+      type: "fixed-flow"
+      parameters:
+        componentName: "Fixed Flow"
+        columns:
+        - - "ORDER_COUNT_ID"
+          - "NUMBER"
+          - ""
+          - ""
+        - - "ORDER_ID"
+          - "VARCHAR"
+          - ""
+          - ""
+        - - "COUNT"
+          - "NUMBER"
+          - ""
+          - ""
+        values:
+        - - "12476"
+          - "FJDGHSAXJI124"
+          - "86"
+    Aggregate:
+      type: "aggregate"
+      sources:
+      - "Fixed Flow"
+      parameters:
+        componentName: "Aggregate"
+        groupings:
+        - "ORDER_COUNT_ID"
+        - "ORDER_ID"
+        aggregations:
+        - - "COUNT"
+          - "Sum"
+        groupingType: "Group By"
+    Construct Variant:
+      type: "construct-variant"
+      sources:
+      - "Aggregate"
+      parameters:
+        componentName: "Construct Variant"
+        columnMappings:
+        - - "ORDER_ID"
+          - "ID"
+        - - "ORDER_COUNT_ID"
+          - "COUNT_ID"
+        - - "sum_COUNT"
+          - "SUM"
+        outputSlot: "data"
+    Extract Nested Data:
+      type: "extract-nested-data-sf"
+      sources:
+      - "Construct Variant"
+      parameters:
+        componentName: "Extract Nested Data"
+        includeInputColumns: "Yes"
+        columns:
+        - name: "ID"
+          datatype: "VARCHAR"
+          size: "0"
+          decimalPlaces: "0"
+          columnName: "data"
+          aliasName: "ORDER_ID"
+          isArray: "false"
+          include: "true"
+        - name: "COUNT_ID"
+          datatype: "VARCHAR"
+          size: "0"
+          decimalPlaces: "0"
+          columnName: "data"
+          aliasName: "ORDER_COUNT_ID"
+          isArray: "false"
+          include: "true"
+        - name: "SUM"
+          datatype: "VARCHAR"
+          size: "0"
+          decimalPlaces: "0"
+          columnName: "data"
+          aliasName: "sum_COUNT"
+          isArray: "false"
+          include: "true"
+        outerJoin: "No"
+        inputAlias: "i"
+        arrayPrefix: "f"
+        castingMethod: "Fail on invalid data"
+        caseColumnAliasNames: "No"
+    Create View:
+      type: "create-view"
+      sources:
+      - "Extract Nested Data"
+      parameters:
+        componentName: "Create View"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        viewName: "RES_FIXED_FLOW"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    Fixed Flow:
+      position:
+        x: -480
+        "y": -510
+      tempMetlId: 6
+    Aggregate:
+      position:
+        x: -290
+        "y": -510
+      tempMetlId: 7
+    Construct Variant:
+      position:
+        x: -130
+        "y": -510
+      tempMetlId: 10
+    Extract Nested Data:
+      position:
+        x: 40
+        "y": -510
+      tempMetlId: 12
+    Create View:
+      position:
+        x: 200
+        "y": -510
+      tempMetlId: 20

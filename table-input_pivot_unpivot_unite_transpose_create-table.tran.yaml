@@ -1,0 +1,112 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    PRODUCT_SALES:
+      type: "table-input"
+      parameters:
+        componentName: "PRODUCT_SALES"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "PRODUCT_SALES"
+        columnNames:
+        - "PRODUCT_ID"
+        - "MONTH"
+        - "SALES"
+        timeOffset:
+    SURVEY_RESULTS:
+      type: "table-input"
+      parameters:
+        componentName: "SURVEY_RESULTS"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "SURVEY_RESULTS"
+        columnNames:
+        - "RESPONDENT_ID"
+        - "Q1_RESPONSE"
+        - "Q2_RESPONSE"
+        - "Q3_RESPONSE"
+        timeOffset:
+    Pivot:
+      type: "pivot"
+      sources:
+      - "PRODUCT_SALES"
+      parameters:
+        componentName: "Pivot"
+        aggregateFunction: "Average"
+        pivotColumn: "MONTH"
+        valueColumn: "SALES"
+        pivotValues:
+        - "Jan"
+        - "Feb"
+        - "Mar"
+        quotePivotValueColumns: "No"
+    Unpivot:
+      type: "unpivot"
+      sources:
+      - "SURVEY_RESULTS"
+      parameters:
+        componentName: "Unpivot"
+        columnsToNarrow:
+        - "Q1_RESPONSE"
+        - "Q2_RESPONSE"
+        - "Q3_RESPONSE"
+        outputNamesColumnName: "question"
+        outputValuesColumnName: "answer"
+    Unite:
+      type: "unite"
+      sources:
+      - "Pivot"
+      - "Unpivot"
+      parameters:
+        componentName: "Unite"
+        method: "All Columns"
+        castTypes: "Yes"
+        addSourceComponentColumn: "No"
+        removeDuplicates: "Yes"
+    Rewrite Table:
+      type: "rewrite-table"
+      sources:
+      - "Unite"
+      parameters:
+        componentName: "Rewrite Table"
+        warehouse: "COMPUTE_WH"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "RES_PIVOT_UNPIVOT_UNION"
+        orderBy:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    PRODUCT_SALES:
+      position:
+        x: 90
+        "y": 0
+      tempMetlId: 1
+    SURVEY_RESULTS:
+      position:
+        x: 90
+        "y": 120
+      tempMetlId: 2
+    Pivot:
+      position:
+        x: 240
+        "y": 0
+      tempMetlId: 3
+    Unpivot:
+      position:
+        x: 240
+        "y": 120
+      tempMetlId: 4
+    Unite:
+      position:
+        x: 420
+        "y": 70
+      tempMetlId: 5
+    Rewrite Table:
+      position:
+        x: 550
+        "y": 70
+      tempMetlId: 6

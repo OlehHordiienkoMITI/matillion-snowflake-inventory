@@ -1,0 +1,151 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    Multi Table Input:
+      type: "multi-table-input"
+      parameters:
+        componentName: "Multi Table Input"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        patternType: "Like"
+        pattern: "CUSTOMERS_%"
+        castTypes: "No"
+        addSourceTable: "Yes"
+        columns:
+        - "LAST_NAME"
+        - "CREATED_AT"
+        - "FIRST_NAME"
+        - "CUSTOMER_ID"
+        - "PHONE"
+        - "IS_ACTIVE"
+        - "EMAIL"
+    Distinct:
+      type: "distinct"
+      sources:
+      - "Multi Table Input"
+      parameters:
+        componentName: "Distinct"
+        columns:
+        - "LAST_NAME"
+        - "CREATED_AT"
+        - "FIRST_NAME"
+        - "CUSTOMER_ID"
+        - "PHONE"
+        - "IS_ACTIVE"
+        - "EMAIL"
+    Rank:
+      type: "rank"
+      sources:
+      - "Distinct"
+      parameters:
+        componentName: "Rank"
+        includeInputColumns: "Yes"
+        partitionData:
+        - "EMAIL"
+        orderingWithinPartitions:
+        - - "LAST_NAME"
+          - "Ascending"
+        - - "FIRST_NAME"
+          - "Ascending"
+        functions:
+        - - "Rank"
+          - "EMAIL_RANK"
+    Split Field:
+      type: "split-field"
+      sources:
+      - "Rank"
+      parameters:
+        componentName: "Split Field"
+        inputColumn: "EMAIL"
+        delimiter: "@"
+        outputColumns:
+        - - "0"
+          - "USERNAME"
+        - - "1"
+          - "DOMAIN"
+        includeInputColumn: "Yes"
+    Map Values:
+      type: "map-values"
+      sources:
+      - "Split Field"
+      parameters:
+        componentName: "Map Values"
+        valueMap:
+        - - "DOMAIN"
+          - "Is"
+          - "Equal to"
+          - "GMAIL.COM"
+          - "TRUE"
+        columnName: "APPROVED"
+        other: "FALSE"
+    CUSTOMERS:
+      type: "table-update"
+      sources:
+      - "Map Values"
+      parameters:
+        componentName: "CUSTOMERS"
+        warehouse: "[Environment Default]"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "CUSTOMERS"
+        targetAlias: "target"
+        sourceAlias: "input"
+        joinExpression:
+        - - "\"input\".\"CUSTOMER_ID\"=\"target\".\"CUSTOMER_ID\"AND\"input\".\"LAST_NAME\"\
+            =\"target\".\"LAST_NAME\"AND\"input\".\"FIRST_NAME\"=\"target\".\"FIRST_NAME\""
+          - "Case"
+        whenMatched:
+        - - "\"input\".\"CUSTOMER_ID\"=\"target\".\"CUSTOMER_ID\""
+          - "Update"
+        updateMapping:
+        - - "CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "FIRST_NAME"
+          - "FIRST_NAME"
+        - - "LAST_NAME"
+          - "LAST_NAME"
+        - - "EMAIL"
+          - "EMAIL"
+        - - "PHONE"
+          - "PHONE"
+        - - "CREATED_AT"
+          - "CREATED_AT"
+        - - "IS_ACTIVE"
+          - "IS_ACTIVE"
+        includeNotMatched: "No"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    Multi Table Input:
+      position:
+        x: 510
+        "y": 390
+      tempMetlId: 1
+    Distinct:
+      position:
+        x: 690
+        "y": 390
+      tempMetlId: 2
+    Rank:
+      position:
+        x: 860
+        "y": 390
+      tempMetlId: 3
+    Split Field:
+      position:
+        x: 1030
+        "y": 390
+      tempMetlId: 4
+    Map Values:
+      position:
+        x: 1200
+        "y": 390
+      tempMetlId: 5
+    CUSTOMERS:
+      position:
+        x: 1370
+        "y": 390
+      tempMetlId: 6

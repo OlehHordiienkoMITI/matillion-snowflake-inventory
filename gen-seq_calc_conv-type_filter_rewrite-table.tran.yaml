@@ -1,0 +1,86 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    Generate Sequence:
+      type: "generate-sequence"
+      parameters:
+        componentName: "Generate Sequence"
+        startValue: "1"
+        incrementValue: "1"
+        endValue: "25"
+        outputColumn: "SEQUENCE"
+    Calculator:
+      type: "calculator"
+      sources:
+      - "Generate Sequence"
+      parameters:
+        componentName: "Calculator"
+        includeInputColumns: "Yes"
+        calculations:
+        - - "\"SEQUENCE\">10"
+          - "SEQUENCE_MORE_THAN_10"
+    Convert Type:
+      type: "convert-type"
+      sources:
+      - "Calculator"
+      parameters:
+        componentName: "Convert Type"
+        conversions:
+        - - "SEQUENCE_MORE_THAN_10"
+          - "VARCHAR"
+          - ""
+          - ""
+    Filter:
+      type: "filter"
+      sources:
+      - "Convert Type"
+      parameters:
+        componentName: "Filter"
+        filterConditions:
+        - - "SEQUENCE"
+          - "Not"
+          - "Null"
+          - ""
+        combineCondition: "And"
+    Rewrite Table:
+      type: "rewrite-table"
+      sources:
+      - "Filter"
+      parameters:
+        componentName: "Rewrite Table"
+        warehouse: "[Environment Default]"
+        database: "[Environment Default]"
+        schema: "[Environment Default]"
+        targetTable: "RES_GENERATE_SEQ"
+        orderBy:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    Generate Sequence:
+      position:
+        x: 150
+        "y": 40
+      tempMetlId: 1
+    Calculator:
+      position:
+        x: 350
+        "y": 40
+      tempMetlId: 2
+    Convert Type:
+      position:
+        x: 500
+        "y": 40
+      tempMetlId: 3
+    Filter:
+      position:
+        x: 670
+        "y": 40
+      tempMetlId: 4
+    Rewrite Table:
+      position:
+        x: 830
+        "y": 40
+      tempMetlId: 5

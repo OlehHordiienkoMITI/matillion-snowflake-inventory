@@ -1,0 +1,121 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    Stream Input:
+      type: "stream-input-sf"
+      parameters:
+        componentName: "Stream Input"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetStream: "ORDERS_STREAM"
+        columnNames:
+        - "ORDER_ID"
+        - "CUSTOMER_ID"
+        - "ORDER_DATE"
+        - "STATUS"
+        - "TOTAL_AMOUNT"
+    Rename:
+      type: "rename"
+      sources:
+      - "Stream Input"
+      parameters:
+        componentName: "Rename"
+        columnMapping:
+        - - "ORDER_DATE"
+          - "UPD_DATE"
+        includeInputColumns: "Yes"
+    First/Last:
+      type: "first-last"
+      sources:
+      - "Rename"
+      parameters:
+        componentName: "First/Last"
+        groupingColumns:
+        - "ORDER_ID"
+        - "CUSTOMER_ID"
+        orderingInPartitions:
+        - - "UPD_DATE"
+          - "Descending"
+        firstLastColumns:
+        - - "STATUS"
+          - "Last"
+        - - "TOTAL_AMOUNT"
+          - "Last"
+        ignoreNulls: "Yes"
+    Lead/Lag:
+      type: "lead-lag"
+      sources:
+      - "First/Last"
+      parameters:
+        componentName: "Lead/Lag"
+        includeInputColumns: "Yes"
+        partitionData:
+        - "ORDER_ID"
+        orderingsWithinPartitions:
+        - - "CUSTOMER_ID"
+          - "Ascending"
+        functions:
+        - - "Lead"
+          - "TOTAL_AMOUNT"
+          - "1"
+          - "NEXT_TOTAL_AMOUNT"
+        ignoreNulls: "No"
+    ORDERS:
+      type: "table-output"
+      sources:
+      - "Lead/Lag"
+      parameters:
+        componentName: "ORDERS"
+        warehouse: "[Environment Default]"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "ORDERS"
+        fixDataTypeMismatches: "No"
+        columnMapping:
+        - - "ORDER_ID"
+          - "ORDER_ID"
+        - - "CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "STATUS"
+          - "STATUS"
+        - - "TOTAL_AMOUNT"
+          - "TOTAL_AMOUNT"
+        orderBy:
+        - - "ORDER_ID"
+          - "Ascending"
+        - - "CUSTOMER_ID"
+          - "Descending"
+        - - "ORDER_DATE"
+          - "Nulls First"
+        outputMode: "Append"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    Stream Input:
+      position:
+        x: 770
+        "y": 480
+      tempMetlId: 1
+    Rename:
+      position:
+        x: 970
+        "y": 480
+      tempMetlId: 2
+    First/Last:
+      position:
+        x: 1120
+        "y": 480
+      tempMetlId: 3
+    Lead/Lag:
+      position:
+        x: 1290
+        "y": 480
+      tempMetlId: 4
+    ORDERS:
+      position:
+        x: 1450
+        "y": 480
+      tempMetlId: 5

@@ -1,0 +1,65 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    REVIEWS:
+      type: "table-input"
+      parameters:
+        componentName: "REVIEWS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "REVIEWS"
+        columnNames:
+        - "REVIEW_ID"
+        - "CUSTOMER_ID"
+        - "PRODUCT_ID"
+        - "RATING"
+        - "COMMENT"
+        - "REVIEW_DATE"
+        timeOffset:
+    Transpose Rows:
+      type: "transpose-rows"
+      sources:
+      - "REVIEWS"
+      parameters:
+        componentName: "Transpose Rows"
+        aggregations:
+        - "RATING"
+        - "COMMENT"
+        - "REVIEW_DATE"
+        sortOrder:
+        groupings:
+        - "CUSTOMER_ID"
+        - "PRODUCT_ID"
+        - "REVIEW_ID"
+    Create View:
+      type: "create-view"
+      sources:
+      - "Transpose Rows"
+      parameters:
+        componentName: "Create View"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        viewName: "RES_TRANSPOSE_ROWS"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    REVIEWS:
+      position:
+        x: 300
+        "y": 80
+      tempMetlId: 1
+    Transpose Rows:
+      position:
+        x: 450
+        "y": 80
+      tempMetlId: 2
+    Create View:
+      position:
+        x: 590
+        "y": 80
+      tempMetlId: 3

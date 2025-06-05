@@ -1,0 +1,13 @@
+# This file contains shared pipelines configuration which defines how they appear to consuming users.
+# The configuration is automatically updated when changes are made to shared pipelines in the Designer UI.
+# Please exercise caution when manually editing to avoid conflicts or data loss.
+# For more information please see our documentation.
+
+version: "1.0"
+type: shared-pipelines-config
+pipelines:
+  - pipeline: _copy_sql_table-input_filter_join_create-view.tran.yaml
+    displayName: _copy_sql_table-input_filter_join_create-view
+    id: _copy_sql_table-input_filter_join_create-view
+    enabled: true
+    parameters: {}

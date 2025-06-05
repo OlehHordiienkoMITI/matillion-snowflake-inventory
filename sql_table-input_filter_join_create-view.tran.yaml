@@ -1,0 +1,165 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    CUSTOMERS:
+      type: "table-input"
+      parameters:
+        componentName: "CUSTOMERS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "CUSTOMERS"
+        columnNames:
+        - "CUSTOMER_ID"
+        - "FIRST_NAME"
+        - "LAST_NAME"
+        - "EMAIL"
+        - "PHONE"
+        - "CREATED_AT"
+        - "IS_ACTIVE"
+        timeOffset:
+    SQL:
+      type: "sql"
+      parameters:
+        componentName: "SQL"
+        query: "SELECT order_id,\r\n    customer_id,\r\n    order_date,\r\n    status,\r\
+          \n    total_amount\r\nFROM DBT_DEMO.MATILLION.ORDERS"
+    Join:
+      type: "join"
+      sources:
+      - "SQL"
+      - "Filter 2"
+      - "REVIEWS"
+      parameters:
+        componentName: "Join"
+        mainTable: "Filter 2"
+        mainTableAlias: "CUS"
+        joins:
+        - - "SQL"
+          - "ORD"
+          - "Full"
+        - - "REVIEWS"
+          - "REV"
+          - "Full"
+        joinExpressions:
+        - - "\"CUS\".\"CUSTOMER_ID\"=\"ORD\".\"CUSTOMER_ID\""
+          - "CUS_Full_ORD"
+        - - "\"CUS\".\"CUSTOMER_ID\"=\"REV\".\"CUSTOMER_ID\""
+          - "CUS_Full_REV"
+        columnMappings:
+        - - "CUS.CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "CUS.FIRST_NAME"
+          - "FIRST_NAME"
+        - - "CUS.LAST_NAME"
+          - "LAST_NAME"
+        - - "CUS.EMAIL"
+          - "EMAIL"
+        - - "CUS.PHONE"
+          - "PHONE"
+        - - "CUS.CREATED_AT"
+          - "CREATED_AT"
+        - - "CUS.IS_ACTIVE"
+          - "IS_ACTIVE"
+        - - "ORD.ORDER_ID"
+          - "ORDER_ID"
+        - - "ORD.ORDER_DATE"
+          - "ORDER_DATE"
+        - - "ORD.STATUS"
+          - "STATUS"
+        - - "ORD.TOTAL_AMOUNT"
+          - "TOTAL_AMOUNT"
+        - - "REV.RATING"
+          - "RATING"
+    Map Values:
+      type: "map-values"
+      sources:
+      - "Join"
+      parameters:
+        componentName: "Map Values"
+        valueMap:
+        - - "STATUS"
+          - "Is"
+          - "Equal to"
+          - "ACTIVE"
+          - "INACTIVE"
+        columnName: "STATUS_matched"
+        other: "STATUS_other"
+    Filter 2:
+      type: "filter"
+      sources:
+      - "CUSTOMERS"
+      parameters:
+        componentName: "Filter 2"
+        filterConditions:
+        - - "LAST_NAME"
+          - "Is"
+          - "Null or blank"
+          - "IS_ACTIVE"
+        combineCondition: "And"
+    Create View:
+      type: "create-view"
+      sources:
+      - "Map Values"
+      parameters:
+        componentName: "Create View"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        viewName: "CUSTOMERS_ORDERS"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    REVIEWS:
+      type: "table-input"
+      parameters:
+        componentName: "REVIEWS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "REVIEWS"
+        columnNames:
+        - "REVIEW_ID"
+        - "CUSTOMER_ID"
+        - "PRODUCT_ID"
+        - "RATING"
+        - "COMMENT"
+        - "REVIEW_DATE"
+        timeOffset:
+design:
+  components:
+    CUSTOMERS:
+      position:
+        x: 790
+        "y": 320
+      tempMetlId: 1
+    SQL:
+      position:
+        x: 790
+        "y": 430
+      tempMetlId: 2
+    Join:
+      position:
+        x: 1060
+        "y": 320
+      tempMetlId: 3
+    Map Values:
+      position:
+        x: 1240
+        "y": 320
+      tempMetlId: 4
+    Filter 2:
+      position:
+        x: 910
+        "y": 320
+      tempMetlId: 5
+    Create View:
+      position:
+        x: 1400
+        "y": 320
+      tempMetlId: 6
+    REVIEWS:
+      position:
+        x: 790
+        "y": 530
+      tempMetlId: 7

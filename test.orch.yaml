@@ -1,0 +1,71 @@
+type: "orchestration"
+version: "1.0"
+pipeline:
+  components:
+    Start:
+      type: "start"
+      transitions:
+        unconditional:
+        - "Run Transformation"
+      parameters:
+        componentName: "Start"
+    Run Transformation:
+      type: "run-transformation"
+      transitions:
+        success:
+        - "If"
+      parameters:
+        componentName: "Run Transformation"
+        transformationJob: "table-input_pivot_unpivot_unite_transpose_create-table.tran.yaml"
+        setScalarVariables:
+        setGridVariables:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    If:
+      type: "if"
+      parameters:
+        componentName: "If"
+        mode: "Simple"
+        condition:
+        - - "VAR_PROJECT_TEST1"
+          - "Is"
+          - "Less than"
+          - "WQER"
+        combineConditions: "And"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    Run Shared Pipeline:
+      type: "run-shared-pipeline"
+      parameters:
+        componentName: "Run Shared Pipeline"
+        pipelineName:
+        version: "[Latest]"
+        setScalarVariables:
+        setGridVariables:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    Start:
+      position:
+        x: 10
+        "y": 0
+      tempMetlId: 1
+    Run Transformation:
+      position:
+        x: 130
+        "y": 0
+      tempMetlId: 2
+    If:
+      position:
+        x: 290
+        "y": 0
+      tempMetlId: 3
+    Run Shared Pipeline:
+      position:
+        x: 50
+        "y": -410
+      tempMetlId: 4

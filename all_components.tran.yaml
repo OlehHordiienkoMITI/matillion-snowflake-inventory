@@ -1,0 +1,956 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    CUSTOMERS:
+      type: "table-input"
+      parameters:
+        componentName: "CUSTOMERS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "CUSTOMERS"
+        columnNames:
+        - "CUSTOMER_ID"
+        - "FIRST_NAME"
+        - "LAST_NAME"
+        - "EMAIL"
+        - "PHONE"
+        - "CREATED_AT"
+        - "IS_ACTIVE"
+        timeOffset:
+    SQL:
+      type: "sql"
+      parameters:
+        componentName: "SQL"
+        query: "SELECT \r\n\tPRODUCT_ID,\r\n\tPRODUCT_NAME,\r\n\tCATEGORY,\r\n\tPRICE,\r\
+          \n\tSTOCK_QUANTITY,\r\n\tIS_AVAILABLE\r\nFROM \"DBT_DEMO\".\"MATILLION\"\
+          .\"PRODUCTS\""
+    Join:
+      type: "join"
+      sources:
+      - "SQL"
+      - "Filter 2"
+      - "Filter"
+      parameters:
+        componentName: "Join"
+        mainTable: "Filter"
+        mainTableAlias: "ORDO"
+        joins:
+        - - "SQL"
+          - "PROD"
+          - "Full"
+        - - "Filter 2"
+          - "CUS"
+          - "Full"
+        joinExpressions:
+        - - "\"ORDO\".\"PRODUCT_ID\"=\"PROD\".\"PRODUCT_ID\""
+          - "ORDO_Full_PROD"
+        - - "\"ORDO\".\"CUSTOMER_ID\"=\"CUS\".\"CUSTOMER_ID\""
+          - "ORDO_Full_CUS"
+        columnMappings:
+        - - "CUS.CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "CUS.FIRST_NAME"
+          - "FIRST_NAME"
+        - - "CUS.LAST_NAME"
+          - "LAST_NAME"
+        - - "CUS.EMAIL"
+          - "EMAIL"
+        - - "CUS.PHONE"
+          - "PHONE"
+        - - "CUS.CREATED_AT"
+          - "CREATED_AT"
+        - - "CUS.IS_ACTIVE"
+          - "IS_ACTIVE"
+        - - "PROD.PRODUCT_ID"
+          - "PRODUCT_ID"
+        - - "PROD.PRODUCT_NAME"
+          - "PRODUCT_NAME"
+        - - "PROD.CATEGORY"
+          - "CATEGORY"
+        - - "PROD.PRICE"
+          - "PRICE"
+        - - "PROD.STOCK_QUANTITY"
+          - "STOCK_QUANTITY"
+        - - "PROD.IS_AVAILABLE"
+          - "IS_AVAILABLE"
+        - - "ORDO.ORDER_ITEM_ID"
+          - "ORDER_ITEM_ID"
+        - - "ORDO.QUANTITY"
+          - "QUANTITY"
+        - - "ORDO.ITEM_PRICE"
+          - "ITEM_PRICE"
+        - - "ORDO.ORDER_ID"
+          - "ORDER_ID"
+        - - "ORDO.ORDER_DATE"
+          - "ORDER_DATE"
+        - - "ORDO.STATUS"
+          - "STATUS"
+        - - "ORDO.TOTAL_AMOUNT"
+          - "TOTAL_AMOUNT"
+    Map Values:
+      type: "map-values"
+      sources:
+      - "Join"
+      parameters:
+        componentName: "Map Values"
+        valueMap:
+        - - "STATUS"
+          - "Is"
+          - "Equal to"
+          - "ACTIVE"
+          - "INACTIVE"
+        columnName: "STATUS_matched"
+        other: "STATUS_other"
+    Filter 2:
+      type: "filter"
+      sources:
+      - "CUSTOMERS"
+      parameters:
+        componentName: "Filter 2"
+        filterConditions:
+        - - "LAST_NAME"
+          - "Is"
+          - "Null or blank"
+          - "IS_ACTIVE"
+        combineCondition: "And"
+    Create View:
+      type: "create-view"
+      sources:
+      - "Map Values"
+      parameters:
+        componentName: "Create View"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        viewName: "CUSTOMERS_ORDERS"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    ORDER_ITEMS:
+      type: "table-input"
+      parameters:
+        componentName: "ORDER_ITEMS"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "ORDER_ITEMS"
+        columnNames:
+        - "ORDER_ITEM_ID"
+        - "ORDER_ID"
+        - "PRODUCT_ID"
+        - "QUANTITY"
+        - "ITEM_PRICE"
+        timeOffset:
+    ORDERS:
+      type: "table-input"
+      parameters:
+        componentName: "ORDERS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "ORDERS"
+        columnNames:
+        - "ORDER_ID"
+        - "CUSTOMER_ID"
+        - "ORDER_DATE"
+        - "STATUS"
+        - "TOTAL_AMOUNT"
+        timeOffset:
+    Join 2:
+      type: "join"
+      sources:
+      - "ORDER_ITEMS"
+      - "ORDERS"
+      parameters:
+        componentName: "Join 2"
+        mainTable: "ORDER_ITEMS"
+        mainTableAlias: "OI"
+        joins:
+        - - "ORDERS"
+          - "O"
+          - "Full"
+        joinExpressions:
+        - - "\"OI\".\"ORDER_ID\"=\"O\".\"ORDER_ID\""
+          - "OI_Full_O"
+        columnMappings:
+        - - "OI.ORDER_ITEM_ID"
+          - "ORDER_ITEM_ID"
+        - - "OI.PRODUCT_ID"
+          - "PRODUCT_ID"
+        - - "OI.QUANTITY"
+          - "QUANTITY"
+        - - "OI.ITEM_PRICE"
+          - "ITEM_PRICE"
+        - - "O.ORDER_ID"
+          - "ORDER_ID"
+        - - "O.CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "O.ORDER_DATE"
+          - "ORDER_DATE"
+        - - "O.STATUS"
+          - "STATUS"
+        - - "O.TOTAL_AMOUNT"
+          - "TOTAL_AMOUNT"
+    Filter:
+      type: "filter"
+      sources:
+      - "Join 2"
+      parameters:
+        componentName: "Filter"
+        filterConditions:
+        - - "QUANTITY"
+          - "Is"
+          - "Greater than"
+          - "300"
+        - - "TOTAL_AMOUNT"
+          - "Is"
+          - "Less than"
+          - "59000"
+        combineCondition: "And"
+    Multi Table Input:
+      type: "multi-table-input"
+      parameters:
+        componentName: "Multi Table Input"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        patternType: "Like"
+        pattern: "CUSTOMERS_%"
+        castTypes: "No"
+        addSourceTable: "Yes"
+        columns:
+        - "LAST_NAME"
+        - "CREATED_AT"
+        - "FIRST_NAME"
+        - "CUSTOMER_ID"
+        - "PHONE"
+        - "IS_ACTIVE"
+        - "EMAIL"
+    Distinct:
+      type: "distinct"
+      sources:
+      - "Multi Table Input"
+      parameters:
+        componentName: "Distinct"
+        columns:
+        - "LAST_NAME"
+        - "CREATED_AT"
+        - "FIRST_NAME"
+        - "CUSTOMER_ID"
+        - "PHONE"
+        - "IS_ACTIVE"
+        - "EMAIL"
+    Rank:
+      type: "rank"
+      sources:
+      - "Distinct"
+      parameters:
+        componentName: "Rank"
+        includeInputColumns: "Yes"
+        partitionData:
+        - "EMAIL"
+        orderingWithinPartitions:
+        - - "LAST_NAME"
+          - "Ascending"
+        - - "FIRST_NAME"
+          - "Ascending"
+        functions:
+        - - "Rank"
+          - "EMAIL_RANK"
+    Split Field:
+      type: "split-field"
+      sources:
+      - "Rank"
+      parameters:
+        componentName: "Split Field"
+        inputColumn: "EMAIL"
+        delimiter: "@"
+        outputColumns:
+        - - "0"
+          - "USERNAME"
+        - - "1"
+          - "DOMAIN"
+        includeInputColumn: "Yes"
+    Map Values 2:
+      type: "map-values"
+      sources:
+      - "Split Field"
+      parameters:
+        componentName: "Map Values 2"
+        valueMap:
+        - - "DOMAIN"
+          - "Is"
+          - "Equal to"
+          - "GMAIL.COM"
+          - "TRUE"
+        columnName: "APPROVED"
+        other: "FALSE"
+    CUSTOMERS 2:
+      type: "table-update"
+      sources:
+      - "Map Values 2"
+      parameters:
+        componentName: "CUSTOMERS 2"
+        warehouse: "[Environment Default]"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "CUSTOMERS"
+        targetAlias: "target"
+        sourceAlias: "input"
+        joinExpression:
+        - - "\"input\".\"CUSTOMER_ID\"=\"target\".\"CUSTOMER_ID\"AND\"input\".\"LAST_NAME\"\
+            =\"target\".\"LAST_NAME\"AND\"input\".\"FIRST_NAME\"=\"target\".\"FIRST_NAME\""
+          - "Case"
+        whenMatched:
+        - - "\"input\".\"CUSTOMER_ID\"=\"target\".\"CUSTOMER_ID\""
+          - "Update"
+        updateMapping:
+        - - "CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "FIRST_NAME"
+          - "FIRST_NAME"
+        - - "LAST_NAME"
+          - "LAST_NAME"
+        - - "EMAIL"
+          - "EMAIL"
+        - - "PHONE"
+          - "PHONE"
+        - - "CREATED_AT"
+          - "CREATED_AT"
+        - - "IS_ACTIVE"
+          - "IS_ACTIVE"
+        includeNotMatched: "No"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    Fixed Flow:
+      type: "fixed-flow"
+      parameters:
+        componentName: "Fixed Flow"
+        columns:
+        - - "ORDER_COUNT_ID"
+          - "NUMBER"
+          - ""
+          - ""
+        - - "ORDER_ID"
+          - "VARCHAR"
+          - ""
+          - ""
+        - - "COUNT"
+          - "NUMBER"
+          - ""
+          - ""
+        values:
+        - - "12476"
+          - "FJDGHSAXJI124"
+          - "86"
+    Aggregate:
+      type: "aggregate"
+      sources:
+      - "Fixed Flow"
+      parameters:
+        componentName: "Aggregate"
+        groupings:
+        - "ORDER_COUNT_ID"
+        - "ORDER_ID"
+        aggregations:
+        - - "COUNT"
+          - "Sum"
+        groupingType: "Group By"
+    Construct Variant:
+      type: "construct-variant"
+      sources:
+      - "Aggregate"
+      parameters:
+        componentName: "Construct Variant"
+        columnMappings:
+        - - "ORDER_ID"
+          - "ID"
+        - - "ORDER_COUNT_ID"
+          - "COUNT_ID"
+        - - "sum_COUNT"
+          - "SUM"
+        outputSlot: "data"
+    Extract Nested Data:
+      type: "extract-nested-data-sf"
+      sources:
+      - "Construct Variant"
+      parameters:
+        componentName: "Extract Nested Data"
+        includeInputColumns: "Yes"
+        columns:
+        - name: "ID"
+          datatype: "VARCHAR"
+          size: "0"
+          decimalPlaces: "0"
+          columnName: "data"
+          aliasName: "ORDER_ID"
+          isArray: "false"
+          include: "true"
+        - name: "COUNT_ID"
+          datatype: "VARCHAR"
+          size: "0"
+          decimalPlaces: "0"
+          columnName: "data"
+          aliasName: "ORDER_COUNT_ID"
+          isArray: "false"
+          include: "true"
+        - name: "SUM"
+          datatype: "VARCHAR"
+          size: "0"
+          decimalPlaces: "0"
+          columnName: "data"
+          aliasName: "sum_COUNT"
+          isArray: "false"
+          include: "true"
+        outerJoin: "No"
+        inputAlias: "i"
+        arrayPrefix: "f"
+        castingMethod: "Fail on invalid data"
+        caseColumnAliasNames: "No"
+    Create View 2:
+      type: "create-view"
+      sources:
+      - "Extract Nested Data"
+      parameters:
+        componentName: "Create View 2"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        viewName: "RES_FIXED_FLOW"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    Generate Sequence:
+      type: "generate-sequence"
+      parameters:
+        componentName: "Generate Sequence"
+        startValue: "1"
+        incrementValue: "1"
+        endValue: "25"
+        outputColumn: "SEQUENCE"
+    Calculator:
+      type: "calculator"
+      sources:
+      - "Generate Sequence"
+      parameters:
+        componentName: "Calculator"
+        includeInputColumns: "Yes"
+        calculations:
+        - - "\"SEQUENCE\">10"
+          - "SEQUENCE_MORE_THAN_10"
+    Convert Type:
+      type: "convert-type"
+      sources:
+      - "Calculator"
+      parameters:
+        componentName: "Convert Type"
+        conversions:
+        - - "SEQUENCE_MORE_THAN_10"
+          - "VARCHAR"
+          - ""
+          - ""
+    Filter 3:
+      type: "filter"
+      sources:
+      - "Convert Type"
+      parameters:
+        componentName: "Filter 3"
+        filterConditions:
+        - - "SEQUENCE"
+          - "Not"
+          - "Null"
+          - ""
+        combineCondition: "And"
+    Rewrite Table:
+      type: "rewrite-table"
+      sources:
+      - "Filter 3"
+      parameters:
+        componentName: "Rewrite Table"
+        warehouse: "[Environment Default]"
+        database: "[Environment Default]"
+        schema: "[Environment Default]"
+        targetTable: "RES_GENERATE_SEQ"
+        orderBy:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    Stream Input:
+      type: "stream-input-sf"
+      parameters:
+        componentName: "Stream Input"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetStream: "ORDERS_STREAM"
+        columnNames:
+        - "ORDER_ID"
+        - "CUSTOMER_ID"
+        - "ORDER_DATE"
+        - "STATUS"
+        - "TOTAL_AMOUNT"
+    Rename:
+      type: "rename"
+      sources:
+      - "Stream Input"
+      parameters:
+        componentName: "Rename"
+        columnMapping:
+        - - "ORDER_DATE"
+          - "UPD_DATE"
+        includeInputColumns: "Yes"
+    First/Last:
+      type: "first-last"
+      sources:
+      - "Rename"
+      parameters:
+        componentName: "First/Last"
+        groupingColumns:
+        - "ORDER_ID"
+        - "CUSTOMER_ID"
+        orderingInPartitions:
+        - - "UPD_DATE"
+          - "Descending"
+        firstLastColumns:
+        - - "STATUS"
+          - "Last"
+        - - "TOTAL_AMOUNT"
+          - "Last"
+        ignoreNulls: "Yes"
+    Lead/Lag:
+      type: "lead-lag"
+      sources:
+      - "First/Last"
+      parameters:
+        componentName: "Lead/Lag"
+        includeInputColumns: "Yes"
+        partitionData:
+        - "ORDER_ID"
+        orderingsWithinPartitions:
+        - - "CUSTOMER_ID"
+          - "Ascending"
+        functions:
+        - - "Lead"
+          - "TOTAL_AMOUNT"
+          - "1"
+          - "NEXT_TOTAL_AMOUNT"
+        ignoreNulls: "No"
+    ORDERS 2:
+      type: "table-output"
+      sources:
+      - "Lead/Lag"
+      parameters:
+        componentName: "ORDERS 2"
+        warehouse: "[Environment Default]"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "ORDERS"
+        fixDataTypeMismatches: "No"
+        columnMapping:
+        - - "ORDER_ID"
+          - "ORDER_ID"
+        - - "CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "STATUS"
+          - "STATUS"
+        - - "TOTAL_AMOUNT"
+          - "TOTAL_AMOUNT"
+        orderBy:
+        - - "ORDER_ID"
+          - "Ascending"
+        - - "CUSTOMER_ID"
+          - "Descending"
+        - - "ORDER_DATE"
+          - "Nulls First"
+        outputMode: "Append"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    USER_EVENTS:
+      type: "table-input"
+      parameters:
+        componentName: "USER_EVENTS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "USER_EVENTS"
+        columnNames:
+        - "USER_ID"
+        - "EVENT_TIME"
+        - "EVENT_DATA"
+        timeOffset:
+    Flatten Variant:
+      type: "flatten-variant"
+      sources:
+      - "USER_EVENTS"
+      parameters:
+        componentName: "Flatten Variant"
+        includeInputColumns: "Yes"
+        columnMapping:
+        - - "EVENT_DATA"
+          - "event_type"
+          - "VARCHAR"
+          - "EVENT_TYPE"
+        - - "EVENT_DATA"
+          - "event_name"
+          - "VARCHAR"
+          - "EVENT_NAME"
+        - - "EVENT_DATA"
+          - "event_owner"
+          - "VARCHAR"
+          - "EVENT_OWNER"
+        - - "EVENT_DATA"
+          - "event_promoter"
+          - "VARCHAR"
+          - "EVENT_PROMOTER"
+        columnFlattens:
+    Create View 3:
+      type: "create-view"
+      sources:
+      - "Flatten Variant"
+      parameters:
+        componentName: "Create View 3"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        viewName: "RES_FLATTEN_VAR"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    PRODUCT_SALES:
+      type: "table-input"
+      parameters:
+        componentName: "PRODUCT_SALES"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "PRODUCT_SALES"
+        columnNames:
+        - "PRODUCT_ID"
+        - "MONTH"
+        - "SALES"
+        timeOffset:
+    SURVEY_RESULTS:
+      type: "table-input"
+      parameters:
+        componentName: "SURVEY_RESULTS"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "SURVEY_RESULTS"
+        columnNames:
+        - "RESPONDENT_ID"
+        - "Q1_RESPONSE"
+        - "Q2_RESPONSE"
+        - "Q3_RESPONSE"
+        timeOffset:
+    Pivot:
+      type: "pivot"
+      sources:
+      - "PRODUCT_SALES"
+      parameters:
+        componentName: "Pivot"
+        aggregateFunction: "Average"
+        pivotColumn: "MONTH"
+        valueColumn: "SALES"
+        pivotValues:
+        - "Jan"
+        - "Feb"
+        - "Mar"
+        quotePivotValueColumns: "No"
+    Unpivot:
+      type: "unpivot"
+      sources:
+      - "SURVEY_RESULTS"
+      parameters:
+        componentName: "Unpivot"
+        columnsToNarrow:
+        - "Q1_RESPONSE"
+        - "Q2_RESPONSE"
+        - "Q3_RESPONSE"
+        outputNamesColumnName: "question"
+        outputValuesColumnName: "answer"
+    Unite:
+      type: "unite"
+      sources:
+      - "Pivot"
+      - "Unpivot"
+      parameters:
+        componentName: "Unite"
+        method: "All Columns"
+        castTypes: "Yes"
+        addSourceComponentColumn: "No"
+        removeDuplicates: "Yes"
+    Rewrite Table 2:
+      type: "rewrite-table"
+      sources:
+      - "Unite"
+      parameters:
+        componentName: "Rewrite Table 2"
+        warehouse: "COMPUTE_WH"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "RES_PIVOT_UNPIVOT_UNION"
+        orderBy:
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    REVIEWS:
+      type: "table-input"
+      parameters:
+        componentName: "REVIEWS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "REVIEWS"
+        columnNames:
+        - "REVIEW_ID"
+        - "CUSTOMER_ID"
+        - "PRODUCT_ID"
+        - "RATING"
+        - "COMMENT"
+        - "REVIEW_DATE"
+        timeOffset:
+    Transpose Rows:
+      type: "transpose-rows"
+      sources:
+      - "REVIEWS"
+      parameters:
+        componentName: "Transpose Rows"
+        aggregations:
+        - "RATING"
+        - "COMMENT"
+        - "REVIEW_DATE"
+        sortOrder:
+        groupings:
+        - "CUSTOMER_ID"
+        - "PRODUCT_ID"
+        - "REVIEW_ID"
+    Create View 4:
+      type: "create-view"
+      sources:
+      - "Transpose Rows"
+      parameters:
+        componentName: "Create View 4"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        viewName: "RES_TRANSPOSE_ROWS"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+design:
+  components:
+    CUSTOMERS:
+      position:
+        x: 1170
+        "y": 620
+      tempMetlId: 1
+    SQL:
+      position:
+        x: 1170
+        "y": 750
+      tempMetlId: 2
+    Join:
+      position:
+        x: 1440
+        "y": 620
+      tempMetlId: 3
+    Map Values:
+      position:
+        x: 1620
+        "y": 620
+      tempMetlId: 4
+    Filter 2:
+      position:
+        x: 1290
+        "y": 620
+      tempMetlId: 5
+    Create View:
+      position:
+        x: 1780
+        "y": 620
+      tempMetlId: 6
+    ORDER_ITEMS:
+      position:
+        x: 940
+        "y": 390
+      tempMetlId: 7
+    ORDERS:
+      position:
+        x: 940
+        "y": 500
+      tempMetlId: 8
+    Join 2:
+      position:
+        x: 1130
+        "y": 460
+      tempMetlId: 9
+    Filter:
+      position:
+        x: 1290
+        "y": 460
+      tempMetlId: 10
+    Multi Table Input:
+      position:
+        x: 940
+        "y": 870
+      tempMetlId: 11
+    Distinct:
+      position:
+        x: 1120
+        "y": 870
+      tempMetlId: 12
+    Rank:
+      position:
+        x: 1290
+        "y": 870
+      tempMetlId: 13
+    Split Field:
+      position:
+        x: 1460
+        "y": 870
+      tempMetlId: 14
+    Map Values 2:
+      position:
+        x: 1620
+        "y": 870
+      tempMetlId: 15
+    CUSTOMERS 2:
+      position:
+        x: 1760
+        "y": 870
+      tempMetlId: 16
+    Fixed Flow:
+      position:
+        x: 920
+        "y": 1060
+      tempMetlId: 17
+    Aggregate:
+      position:
+        x: 1110
+        "y": 1060
+      tempMetlId: 18
+    Construct Variant:
+      position:
+        x: 1270
+        "y": 1060
+      tempMetlId: 19
+    Extract Nested Data:
+      position:
+        x: 1440
+        "y": 1060
+      tempMetlId: 20
+    Create View 2:
+      position:
+        x: 1600
+        "y": 1060
+      tempMetlId: 21
+    Generate Sequence:
+      position:
+        x: 930
+        "y": 1220
+      tempMetlId: 22
+    Calculator:
+      position:
+        x: 1120
+        "y": 1220
+      tempMetlId: 23
+    Convert Type:
+      position:
+        x: 1280
+        "y": 1220
+      tempMetlId: 24
+    Filter 3:
+      position:
+        x: 1450
+        "y": 1220
+      tempMetlId: 25
+    Rewrite Table:
+      position:
+        x: 1610
+        "y": 1220
+      tempMetlId: 26
+    Stream Input:
+      position:
+        x: 920
+        "y": 1360
+      tempMetlId: 27
+    Rename:
+      position:
+        x: 1120
+        "y": 1360
+      tempMetlId: 28
+    First/Last:
+      position:
+        x: 1270
+        "y": 1360
+      tempMetlId: 29
+    Lead/Lag:
+      position:
+        x: 1440
+        "y": 1360
+      tempMetlId: 30
+    ORDERS 2:
+      position:
+        x: 1600
+        "y": 1360
+      tempMetlId: 31
+    USER_EVENTS:
+      position:
+        x: 910
+        "y": 1510
+      tempMetlId: 32
+    Flatten Variant:
+      position:
+        x: 1070
+        "y": 1510
+      tempMetlId: 33
+    Create View 3:
+      position:
+        x: 1230
+        "y": 1510
+      tempMetlId: 34
+    PRODUCT_SALES:
+      position:
+        x: 910
+        "y": 1650
+      tempMetlId: 35
+    SURVEY_RESULTS:
+      position:
+        x: 910
+        "y": 1770
+      tempMetlId: 36
+    Pivot:
+      position:
+        x: 1060
+        "y": 1650
+      tempMetlId: 37
+    Unpivot:
+      position:
+        x: 1060
+        "y": 1770
+      tempMetlId: 38
+    Unite:
+      position:
+        x: 1240
+        "y": 1720
+      tempMetlId: 39
+    Rewrite Table 2:
+      position:
+        x: 1370
+        "y": 1720
+      tempMetlId: 40
+    REVIEWS:
+      position:
+        x: 920
+        "y": 1900
+      tempMetlId: 41
+    Transpose Rows:
+      position:
+        x: 1070
+        "y": 1900
+      tempMetlId: 42
+    Create View 4:
+      position:
+        x: 1210
+        "y": 1900
+      tempMetlId: 43

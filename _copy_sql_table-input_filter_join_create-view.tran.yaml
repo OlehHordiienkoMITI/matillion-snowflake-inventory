@@ -1,0 +1,261 @@
+type: "transformation"
+version: "1.0"
+pipeline:
+  components:
+    CUSTOMERS:
+      type: "table-input"
+      parameters:
+        componentName: "CUSTOMERS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "CUSTOMERS"
+        columnNames:
+        - "CUSTOMER_ID"
+        - "FIRST_NAME"
+        - "LAST_NAME"
+        - "EMAIL"
+        - "PHONE"
+        - "CREATED_AT"
+        - "IS_ACTIVE"
+        timeOffset:
+    SQL:
+      type: "sql"
+      parameters:
+        componentName: "SQL"
+        query: "SELECT \r\n\tPRODUCT_ID,\r\n\tPRODUCT_NAME,\r\n\tCATEGORY,\r\n\tPRICE,\r\
+          \n\tSTOCK_QUANTITY,\r\n\tIS_AVAILABLE\r\nFROM \"DBT_DEMO\".\"MATILLION\"\
+          .\"PRODUCTS\""
+    Join:
+      type: "join"
+      sources:
+      - "SQL"
+      - "Filter 2"
+      - "Filter"
+      parameters:
+        componentName: "Join"
+        mainTable: "Filter"
+        mainTableAlias: "ORDO"
+        joins:
+        - - "SQL"
+          - "PROD"
+          - "Full"
+        - - "Filter 2"
+          - "CUS"
+          - "Full"
+        joinExpressions:
+        - - "\"ORDO\".\"PRODUCT_ID\"=\"PROD\".\"PRODUCT_ID\""
+          - "ORDO_Full_PROD"
+        - - "\"ORDO\".\"CUSTOMER_ID\"=\"CUS\".\"CUSTOMER_ID\""
+          - "ORDO_Full_CUS"
+        columnMappings:
+        - - "CUS.CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "CUS.FIRST_NAME"
+          - "FIRST_NAME"
+        - - "CUS.LAST_NAME"
+          - "LAST_NAME"
+        - - "CUS.EMAIL"
+          - "EMAIL"
+        - - "CUS.PHONE"
+          - "PHONE"
+        - - "CUS.CREATED_AT"
+          - "CREATED_AT"
+        - - "CUS.IS_ACTIVE"
+          - "IS_ACTIVE"
+        - - "PROD.PRODUCT_ID"
+          - "PRODUCT_ID"
+        - - "PROD.PRODUCT_NAME"
+          - "PRODUCT_NAME"
+        - - "PROD.CATEGORY"
+          - "CATEGORY"
+        - - "PROD.PRICE"
+          - "PRICE"
+        - - "PROD.STOCK_QUANTITY"
+          - "STOCK_QUANTITY"
+        - - "PROD.IS_AVAILABLE"
+          - "IS_AVAILABLE"
+        - - "ORDO.ORDER_ITEM_ID"
+          - "ORDER_ITEM_ID"
+        - - "ORDO.QUANTITY"
+          - "QUANTITY"
+        - - "ORDO.ITEM_PRICE"
+          - "ITEM_PRICE"
+        - - "ORDO.ORDER_ID"
+          - "ORDER_ID"
+        - - "ORDO.ORDER_DATE"
+          - "ORDER_DATE"
+        - - "ORDO.STATUS"
+          - "STATUS"
+        - - "ORDO.TOTAL_AMOUNT"
+          - "TOTAL_AMOUNT"
+    Map Values:
+      type: "map-values"
+      sources:
+      - "Join"
+      parameters:
+        componentName: "Map Values"
+        valueMap:
+        - - "STATUS"
+          - "Is"
+          - "Equal to"
+          - "ACTIVE"
+          - "INACTIVE"
+        columnName: "STATUS_matched"
+        other: "STATUS_other"
+    Filter 2:
+      type: "filter"
+      sources:
+      - "CUSTOMERS"
+      parameters:
+        componentName: "Filter 2"
+        filterConditions:
+        - - "LAST_NAME"
+          - "Is"
+          - "Null or blank"
+          - "IS_ACTIVE"
+        combineCondition: "And"
+    Create View:
+      type: "create-view"
+      sources:
+      - "Map Values"
+      parameters:
+        componentName: "Create View"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        viewName: "CUSTOMERS_ORDERS"
+        secureView: "No"
+        viewType: "Standard"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
+    ORDER_ITEMS:
+      type: "table-input"
+      parameters:
+        componentName: "ORDER_ITEMS"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "ORDER_ITEMS"
+        columnNames:
+        - "ORDER_ITEM_ID"
+        - "ORDER_ID"
+        - "PRODUCT_ID"
+        - "QUANTITY"
+        - "ITEM_PRICE"
+        timeOffset:
+    ORDERS:
+      type: "table-input"
+      parameters:
+        componentName: "ORDERS"
+        database: "[Environment Default]"
+        schema: "MATILLION"
+        targetTable: "ORDERS"
+        columnNames:
+        - "ORDER_ID"
+        - "CUSTOMER_ID"
+        - "ORDER_DATE"
+        - "STATUS"
+        - "TOTAL_AMOUNT"
+        timeOffset:
+    Join 2:
+      type: "join"
+      sources:
+      - "ORDER_ITEMS"
+      - "ORDERS"
+      parameters:
+        componentName: "Join 2"
+        mainTable: "ORDER_ITEMS"
+        mainTableAlias: "OI"
+        joins:
+        - - "ORDERS"
+          - "O"
+          - "Full"
+        joinExpressions:
+        - - "\"OI\".\"ORDER_ID\"=\"O\".\"ORDER_ID\""
+          - "OI_Full_O"
+        columnMappings:
+        - - "OI.ORDER_ITEM_ID"
+          - "ORDER_ITEM_ID"
+        - - "OI.PRODUCT_ID"
+          - "PRODUCT_ID"
+        - - "OI.QUANTITY"
+          - "QUANTITY"
+        - - "OI.ITEM_PRICE"
+          - "ITEM_PRICE"
+        - - "O.ORDER_ID"
+          - "ORDER_ID"
+        - - "O.CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "O.ORDER_DATE"
+          - "ORDER_DATE"
+        - - "O.STATUS"
+          - "STATUS"
+        - - "O.TOTAL_AMOUNT"
+          - "TOTAL_AMOUNT"
+    Filter:
+      type: "filter"
+      sources:
+      - "Join 2"
+      parameters:
+        componentName: "Filter"
+        filterConditions:
+        - - "QUANTITY"
+          - "Is"
+          - "Greater than"
+          - "300"
+        - - "TOTAL_AMOUNT"
+          - "Is"
+          - "Less than"
+          - "59000"
+        combineCondition: "And"
+design:
+  components:
+    CUSTOMERS:
+      position:
+        x: 1520
+        "y": -10
+      tempMetlId: 1
+    SQL:
+      position:
+        x: 1520
+        "y": 120
+      tempMetlId: 2
+    Join:
+      position:
+        x: 1790
+        "y": -10
+      tempMetlId: 3
+    Map Values:
+      position:
+        x: 1970
+        "y": -10
+      tempMetlId: 4
+    Filter 2:
+      position:
+        x: 1640
+        "y": -10
+      tempMetlId: 5
+    Create View:
+      position:
+        x: 2130
+        "y": -10
+      tempMetlId: 6
+    ORDER_ITEMS:
+      position:
+        x: 1290
+        "y": -240
+      tempMetlId: 8
+    ORDERS:
+      position:
+        x: 1290
+        "y": -130
+      tempMetlId: 9
+    Join 2:
+      position:
+        x: 1480
+        "y": -170
+      tempMetlId: 11
+    Filter:
+      position:
+        x: 1640
+        "y": -170
+      tempMetlId: 12
