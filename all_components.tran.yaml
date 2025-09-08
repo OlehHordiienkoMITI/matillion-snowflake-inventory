@@ -37,7 +37,7 @@ pipeline:
         mainTableAlias: "ORDO"
         joins:
         - - "SQL"
-          - "PROD"
+          - "${ALIAS}"
           - "Full"
         - - "Filter 2"
           - "CUS"
@@ -737,6 +737,14 @@ pipeline:
       postProcessing:
         updateOutputMessage:
         updateScalarVariables:
+  variables:
+    ALIAS:
+      metadata:
+        type: "TEXT"
+        description: ""
+        scope: "SHARED"
+        visibility: "PUBLIC"
+      defaultValue: "PROD"
 design:
   components:
     CUSTOMERS:

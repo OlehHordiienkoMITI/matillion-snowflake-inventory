@@ -24,6 +24,9 @@ pipeline:
         updateScalarVariables:
     If:
       type: "if"
+      transitions:
+        "true":
+        - "Azure Blob Storage Load"
       parameters:
         componentName: "If"
         mode: "Simple"
@@ -36,14 +39,43 @@ pipeline:
       postProcessing:
         updateOutputMessage:
         updateScalarVariables:
-    Run Shared Pipeline:
-      type: "run-shared-pipeline"
+    Azure Blob Storage Load:
+      type: "azure-blob-storage-load"
       parameters:
-        componentName: "Run Shared Pipeline"
-        pipelineName:
-        version: "[Latest]"
-        setScalarVariables:
-        setGridVariables:
+        componentName: "Azure Blob Storage Load"
+        stage: "[Custom]"
+        authentication: "Credentials"
+        azureStorageLocation: "azure://aakadlsgen2/aakroot/"
+        pattern: ".*"
+        warehouse: "[Environment Default]"
+        database: "[Environment Default]"
+        schema: "[Environment Default]"
+        targetTable: "ADDRESS"
+        loadColumns:
+        format: "[Custom]"
+        fileType: "CSV"
+        compression: "AUTO"
+        recordDelimiter:
+        fieldDelimiter:
+        skipHeader:
+        skipBlankLines: "False"
+        dateFormat:
+        timeFormat:
+        timestampFormat:
+        escape:
+        escapeUnenclosedField:
+        trimSpace: "False"
+        fieldOptionallyEnclosed:
+        nullIf:
+        errorOnColumnCountMismatch: "False"
+        emptyFieldAsNull: "True"
+        replaceInvalidCharacters: "False"
+        encodingType:
+        onError: "Abort Statement"
+        sizeLimitB:
+        purgeFiles: "False"
+        truncateColumns: "False"
+        forceLoad: "False"
       postProcessing:
         updateOutputMessage:
         updateScalarVariables:
@@ -64,8 +96,8 @@ design:
         x: 290
         "y": 0
       tempMetlId: 3
-    Run Shared Pipeline:
+    Azure Blob Storage Load:
       position:
-        x: 50
-        "y": -410
-      tempMetlId: 4
+        x: 450
+        "y": 20
+      tempMetlId: 5
