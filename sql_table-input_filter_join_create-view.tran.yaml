@@ -123,7 +123,7 @@ pipeline:
         - - "\"LAST_NAME\" + ' ' + \"FIRST_NAME\""
           - "FULLNAME"
     CUSTOMER_ORDERS_VW:
-      type: "table-update"
+      type: "table-output"
       sources:
       - "Calculator"
       parameters:
@@ -132,13 +132,8 @@ pipeline:
         database: "DBT_DEMO"
         schema: "MATILLION"
         targetTable: "CUSTOMER_ORDERS_VW"
-        targetAlias: "target"
-        sourceAlias: "input"
-        joinExpression:
-        - - "\"input\".\"CUSTOMER_ID\"=\"target\".\"CUSTOMER_ID\""
-          - "Case"
-        whenMatched:
-        updateMapping:
+        fixDataTypeMismatches: "No"
+        columnMapping:
         - - "CUSTOMER_ID"
           - "CUSTOMER_ID"
         - - "FIRST_NAME"
@@ -167,7 +162,8 @@ pipeline:
           - "STATUS_MATCHED"
         - - "FULLNAME"
           - "FULLNAME"
-        includeNotMatched: "No"
+        orderBy:
+        outputMode: "Append"
       postProcessing:
         updateOutputMessage:
         updateScalarVariables:
@@ -205,11 +201,11 @@ design:
       tempMetlId: 7
     Calculator:
       position:
-        x: 1400
+        x: 1390
         "y": 320
       tempMetlId: 8
     CUSTOMER_ORDERS_VW:
       position:
-        x: 1550
+        x: 1540
         "y": 320
-      tempMetlId: 9
+      tempMetlId: 10
