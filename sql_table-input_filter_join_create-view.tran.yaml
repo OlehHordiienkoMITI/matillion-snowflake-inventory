@@ -97,20 +97,6 @@ pipeline:
           - "Null or blank"
           - "IS_ACTIVE"
         combineCondition: "And"
-    Create View:
-      type: "create-view"
-      sources:
-      - "Map Values"
-      parameters:
-        componentName: "Create View"
-        database: "DBT_DEMO"
-        schema: "MATILLION"
-        viewName: "CUSTOMERS_ORDERS"
-        secureView: "No"
-        viewType: "Standard"
-      postProcessing:
-        updateOutputMessage:
-        updateScalarVariables:
     REVIEWS:
       type: "table-input"
       parameters:
@@ -126,6 +112,65 @@ pipeline:
         - "COMMENT"
         - "REVIEW_DATE"
         timeOffset:
+    Calculator:
+      type: "calculator"
+      sources:
+      - "Map Values"
+      parameters:
+        componentName: "Calculator"
+        includeInputColumns: "Yes"
+        calculations:
+        - - "\"LAST_NAME\" + ' ' + \"FIRST_NAME\""
+          - "FULLNAME"
+    CUSTOMER_ORDERS_VW:
+      type: "table-update"
+      sources:
+      - "Calculator"
+      parameters:
+        componentName: "CUSTOMER_ORDERS_VW"
+        warehouse: "[Environment Default]"
+        database: "DBT_DEMO"
+        schema: "MATILLION"
+        targetTable: "CUSTOMER_ORDERS_VW"
+        targetAlias: "target"
+        sourceAlias: "input"
+        joinExpression:
+        - - "\"input\".\"CUSTOMER_ID\"=\"target\".\"CUSTOMER_ID\""
+          - "Case"
+        whenMatched:
+        updateMapping:
+        - - "CUSTOMER_ID"
+          - "CUSTOMER_ID"
+        - - "FIRST_NAME"
+          - "NAME"
+        - - "LAST_NAME"
+          - "SURNAME"
+        - - "EMAIL"
+          - "EMAIL"
+        - - "PHONE"
+          - "PHONE"
+        - - "CREATED_AT"
+          - "CREATED"
+        - - "IS_ACTIVE"
+          - "ACTIVE"
+        - - "ORDER_ID"
+          - "ORDER_ID"
+        - - "ORDER_DATE"
+          - "ORDER_DATE"
+        - - "STATUS"
+          - "STATUS"
+        - - "TOTAL_AMOUNT"
+          - "AMOUNT"
+        - - "RATING"
+          - "RATING"
+        - - "STATUS_matched"
+          - "STATUS_MATCHED"
+        - - "FULLNAME"
+          - "FULLNAME"
+        includeNotMatched: "No"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
 design:
   components:
     CUSTOMERS:
@@ -153,13 +198,18 @@ design:
         x: 910
         "y": 320
       tempMetlId: 5
-    Create View:
-      position:
-        x: 1400
-        "y": 320
-      tempMetlId: 6
     REVIEWS:
       position:
         x: 790
         "y": 530
       tempMetlId: 7
+    Calculator:
+      position:
+        x: 1400
+        "y": 320
+      tempMetlId: 8
+    CUSTOMER_ORDERS_VW:
+      position:
+        x: 1550
+        "y": 320
+      tempMetlId: 9
